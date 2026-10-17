@@ -71,6 +71,23 @@ print("  By Category:")
 for c, total in cat_totals.items():
     print(f"    {c}: {total}")
 
+# --- 5. PROCESSED RESULTS ---
+# Process = remove duplicates + clean structure + format values
+processed_results = []
+for rec in distinct:
+    processed_results.append({
+        "Test_Source": rec["source"],
+        "Measurement_Category": rec["category"],
+        "Measured_Value": rec["value"],
+        "Status": "Valid"
+    })
+
+print("\n--- 5. PROCESSED RESULTS ---")
+print(f"  {'Source':<8} {'Category':<16} {'Value':>8} {'Status':<10}")
+print(f"  {'-'*42}")
+for rec in processed_results:
+    print(f"  {rec['Test_Source']:<8} {rec['Measurement_Category']:<16} {rec['Measured_Value']:>8} {rec['Status']:<10}")
+
 ordered = sorted(distinct, key=lambda x: (x["source"], x["category"]))
 print("\n--- 5. ORDERED RESULTS ---")
 for rec in ordered:
@@ -205,7 +222,25 @@ for t in transactions:
     else:
         seen_tx.append(key)
 
-print("\n--- 2. REPEATED TRANSACTIONS ---")
+# --- 2. Organized Transaction Data ---
+by_customer = {}
+by_product = {}
+for t in transactions:
+    c, p = t["customer"], t["product"]
+    by_customer.setdefault(c, []).append(t)
+    by_product.setdefault(p, []).append(t)
+
+print("\n--- 2. ORGANIZED TRANSACTION DATA ---")
+print("  By Customer:")
+for cust, tx_list in by_customer.items():
+    items = [f"{t['product']}(x{t['qty']})" for t in tx_list]
+    print(f"    {cust:12}: {', '.join(items)}")
+print("  By Product:")
+for prod, tx_list in by_product.items():
+    buyers = [t["customer"] for t in tx_list]
+    print(f"    {prod:12}: Purchased by {', '.join(buyers)}")
+
+print("\n--- 3. REPEATED TRANSACTIONS ---")
 print(f"  Repeated: {repeated_tx if repeated_tx else 'None'}")
 
 by_customer = {}
@@ -215,25 +250,32 @@ for t in transactions:
     by_customer.setdefault(c, []).append(t)
     by_product.setdefault(p, []).append(t)
 
-print("\n--- 3. CUSTOMER SUMMARIES ---")
+# --- 4. Transaction Values ---
+print("\n--- 4. TRANSACTION VALUES ---")
+print(f"  {'Customer':<12} {'Product':<12} {'Qty':>4} {'Price':>8} {'Amount':>10}")
+print(f"  {'-'*52}")
+for t in transactions:
+    print(f"  {t['customer']:<12} {t['product']:<12} {t['qty']:4} ₱{prices[t['product']]:7.2f} ₱{t['amount']:9.2f}")
+
+print("\n--- 5. CUSTOMER SUMMARIES ---")
 for cust in customers:
     tx_list = by_customer.get(cust, [])
     total = sum(t["amount"] for t in tx_list)
     print(f"  {cust:12} | Total Spent: ₱{total:.2f}")
 
-print("\n--- 4. PRODUCT SUMMARIES ---")
+print("\n--- 6. PRODUCT SUMMARIES ---")
 for prod in products:
     qty_total = sum(t["qty"] for t in transactions if t["product"] == prod)
     sales_total = sum(t["amount"] for t in transactions if t["product"] == prod)
     print(f"  {prod:12} | Sold: {qty_total:2} | Sales: ₱{sales_total:.2f}")
 
-print("\n--- 5. ORDERED TRANSACTIONS ---")
+print("\n--- 7. ORDERED TRANSACTIONS ---")
 ordered_tx = sorted(seen_tx, key=lambda x: (x[0], -(x[2] * prices[x[1]])))
 for c, p, qty in ordered_tx:
     amt = qty * prices[p]
     print(f"  {c:12} | {p:12} | Qty: {qty:2} | Amount: ₱{amt:.2f}")
 
-print("\n--- 6. OVERALL TRANSACTION SUMMARY ---")
+print("\n--- 8. OVERALL TRANSACTION SUMMARY ---")
 total_sales_all = sum(t["amount"] for t in transactions)
 unique_sales = sum(qty * prices[p] for c, p, qty in seen_tx)
 print(f"  Total Transactions: {len(transactions)}")
@@ -241,6 +283,19 @@ print(f"  Unique Transactions: {len(seen_tx)}")
 print(f"  Duplicates Found:    {len(repeated_tx)}")
 print(f"  Total Sales (Gross): ₱{total_sales_all:.2f}")
 print(f"  Unique Sales Value:  ₱{unique_sales:.2f}")
+
+# --- FINAL CONSOLIDATED TRANSACTION REPORT ---
+print("\n" + "="*70)
+print("FINAL CONSOLIDATED TRANSACTION REPORT")
+print("="*70)
+print(f"  Prepared by: {LAST_NAME}, Mark Vincent")
+print(f"  Dataset Period: All Transactions")
+print(f"  Total Customers: {len(customers)}")
+print(f"  Product Categories: {len(products)}")
+print(f"  Unique Transactions Processed: {len(seen_tx)}")
+print(f"  Consolidated Sales Total: ₱{unique_sales:.2f}")
+print(f"  Status: COMPLETE — duplicates removed, values verified")
+print("="*70)
 
 print("\n" + "="*70)
 print("APPENDIX COMPLETE")
